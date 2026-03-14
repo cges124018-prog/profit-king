@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隱私權政策 — 獲利王</title>
+  <meta name="description" content="獲利王 App 隱私權政策 — 說明我們如何處理您的資料與隱私。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0F121C;
+      --surface:   #1A1F30;
+      --card:      #1E2233;
+      --border:    rgba(255,255,255,0.08);
+      --gold:      #FFD700;
+      --gold-dim:  rgba(255,215,0,0.15);
+      --text:      #E8EAF0;
+      --muted:     rgba(255,255,255,0.55);
+      --accent:    #4F8EF7;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #0F121C 0%, #1A1F30 60%, #0F121C 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 24px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(255,215,0,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .logo-crown {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+      filter: drop-shadow(0 0 20px rgba(255,215,0,0.5));
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #FFD700 0%, #FFF0A0 50%, #FFD700 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    header p.subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Main container ── */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Section ── */
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 36px;
+      margin-bottom: 24px;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+    .section:hover { border-color: rgba(255,215,0,0.2); }
+    .section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      background: linear-gradient(180deg, var(--gold) 0%, transparent 100%);
+      border-radius: 16px 0 0 16px;
+    }
+
+    .section-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px; height: 32px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(255,215,0,0.3);
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 12px;
+    }
+
+    .section h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    .section p, .section li {
+      color: var(--text);
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    .section ul {
+      padding-left: 20px;
+      margin-top: 8px;
+    }
+    .section li {
+      margin-bottom: 8px;
+      position: relative;
+    }
+    .section li::marker { color: var(--gold); }
+
+    /* ── Info badge ── */
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(79,142,247,0.1);
+      border: 1px solid rgba(79,142,247,0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 16px;
+      font-size: 0.88rem;
+      color: #A8C8FF;
+      width: 100%;
+    }
+    .info-badge .icon { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* ── Highlight ── */
+    .highlight {
+      background: var(--gold-dim);
+      border: 1px solid rgba(255,215,0,0.2);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+    }
+    .highlight p { font-size: 0.9rem; }
+    .highlight strong { color: var(--gold); }
+
+    /* ── Contact card ── */
+    .contact-card {
+      background: linear-gradient(135deg, #1A1F30, #1E2233);
+      border: 1px solid rgba(255,215,0,0.25);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      margin-top: 32px;
+    }
+    .contact-card h3 {
+      color: var(--gold);
+      font-size: 1.1rem;
+      margin-bottom: 12px;
+    }
+    .contact-card a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      border-bottom: 1px dashed rgba(79,142,247,0.4);
+      padding-bottom: 2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .contact-card a:hover { color: #A8C8FF; border-color: #A8C8FF; }
+
+    /* ── Update date ── */
+    .update-date {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .update-date span {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    footer strong { color: var(--gold); font-weight: 500; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.5rem; }
+      .section { padding: 24px 20px; }
+      main { padding: 32px 16px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <span class="logo-crown">👑</span>
+    <h1>隱私權政策</h1>
+    <p class="subtitle">獲利王 Profit King — Privacy Policy</p>
+  </header>
+
+  <main>
+    <!-- 更新日期 -->
+    <div class="update-date">
+      <span>📅 最後更新：2026 年 3 月 14 日</span>
+    </div>
+
+    <!-- 前言 -->
+    <div class="section">
+      <div class="section-number">📖</div>
+      <h2>前言</h2>
+      <p>
+        感謝您使用「<strong>獲利王</strong>」（以下簡稱「本應用程式」）。
+        本隱私權政策說明我們在您使用本應用程式時，如何收集、使用及保護您的相關資訊。
+        使用本應用程式即表示您同意本政策的條款。
+      </p>
+    </div>
+
+    <!-- 收集的資訊 -->
+    <div class="section">
+      <div class="section-number">1</div>
+      <h2>我們收集的資訊</h2>
+      <p>本應用程式<strong>不會主動收集</strong>您的個人身份識別資訊。我們僅在技術上需要時存取以下資訊：</p>
+      <ul>
+        <li><strong>網路連線資訊：</strong> 本應用程式需要網路連線以從雲端資料庫取得台灣上市公司財報數據（淨利、EPS、毛利率等），不儲存您的 IP 位址或個人資訊。</li>
+        <li><strong>應用程式使用資料：</strong> 包含您選擇的年份篩選條件與產業類別，僅儲存於本機裝置，不會上傳至伺服器。</li>
+      </ul>
+      <div class="info-badge">
+        <span class="icon">ℹ️</span>
+        <span>本應用程式不要求您登入帳號，也不收集姓名、Email、電話等個人資料。</span>
+      </div>
+    </div>
+
+    <!-- 資料使用方式 -->
+    <div class="section">
+      <div class="section-number">2</div>
+      <h2>資料使用方式</h2>
+      <p>我們從雲端取得的公司財務資料僅用於以下目的：</p>
+      <ul>
+        <li>顯示台灣上市公司淨利排行榜</li>
+        <li>提供年度財務數據篩選與比較功能</li>
+        <li>呈現個別公司的財務趨勢圖表</li>
+      </ul>
+      <div class="highlight">
+        <p>📊 所有財務數據均來自公開資訊（台灣證券交易所 TWSE），<strong>不涉及任何用戶個人財務資訊</strong>。</p>
+      </div>
+    </div>
+
+    <!-- 第三方服務 -->
+    <div class="section">
+      <div class="section-number">3</div>
+      <h2>第三方服務</h2>
+      <p>本應用程式使用以下第三方服務：</p>
+      <ul>
+        <li>
+          <strong>Supabase：</strong> 作為後端雲端資料庫，提供公司財務數據的儲存與查詢服務。
+          Supabase 依據其自身的隱私權政策運作，詳見
+          <a href="https://supabase.com/privacy" target="_blank" rel="noopener" style="color:#4F8EF7;">supabase.com/privacy</a>。
+        </li>
+        <li>
+          <strong>Flutter SDK（Google）：</strong> 本應用程式使用 Flutter 框架開發，可能包含 Google 的基礎遙測服務。
+        </li>
+      </ul>
+    </div>
+
+    <!-- 資料安全 -->
+    <div class="section">
+      <div class="section-number">4</div>
+      <h2>資料安全</h2>
+      <p>
+        我們重視您的數位安全。本應用程式採取以下措施保護資料傳輸安全：
+      </p>
+      <ul>
+        <li>所有網路通訊均透過 <strong>HTTPS（TLS 加密）</strong> 傳輸</li>
+        <li>不在本機儲存任何敏感性個人資料</li>
+        <li>不設定追蹤 Cookie，不建立用戶行為分析</li>
+      </ul>
+    </div>
+
+    <!-- 兒童隱私 -->
+    <div class="section">
+      <div class="section-number">5</div>
+      <h2>兒童隱私保護</h2>
+      <p>
+        本應用程式主要提供台灣上市公司財務資訊，適合關注投資理財的成年用戶。
+        本應用程式<strong>不會故意收集 13 歲以下兒童的任何個人資訊</strong>。
+        若您認為我們無意中收集了兒童資料，請透過下方聯絡方式通知我們。
+      </p>
+    </div>
+
+    <!-- 政策變更 -->
+    <div class="section">
+      <div class="section-number">6</div>
+      <h2>隱私權政策的變更</h2>
+      <p>
+        我們可能不定期更新本隱私權政策。政策變更後，我們將在本頁面更新「最後更新日期」。
+        建議您定期查閱本頁面以了解最新資訊。繼續使用本應用程式即代表您接受更新後的政策內容。
+      </p>
+    </div>
+
+    <!-- 您的權利 -->
+    <div class="section">
+      <div class="section-number">7</div>
+      <h2>您的權利</h2>
+      <p>根據個人資料保護法，您擁有以下權利：</p>
+      <ul>
+        <li>查詢或請求閱覽本應用程式儲存的相關資料</li>
+        <li>要求刪除或更正您的個人資料（如有）</li>
+        <li>隨時停止使用本應用程式</li>
+      </ul>
+      <div class="info-badge">
+        <span class="icon">✅</span>
+        <span>由於本應用程式不主動收集個人資料，您可隨時移除本應用程式以確保資料清除。</span>
+      </div>
+    </div>
+
+    <!-- 聯絡我們 -->
+    <div class="contact-card">
+      <h3>📬 聯絡我們</h3>
+      <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 16px;">
+        如有任何關於本隱私權政策的疑問，歡迎透過以下方式聯絡我們：
+      </p>
+      <p style="font-size: 0.95rem;">
+        📧 Email：<a href="mailto:seth.profitking@gmail.com">seth.profitking@gmail.com</a>
+      </p>
+      <p style="color: var(--muted); font-size: 0.82rem; margin-top: 12px;">
+        我們將在 7 個工作日內回覆您的來信。
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 <strong>獲利王 Profit King</strong>. All rights reserved.</p>
+    <p style="margin-top: 6px;">本應用程式資料來源：台灣證券交易所（TWSE）公開資訊</p>
+  </footer>
+
+</body>
+</html>

@@ -53,20 +53,25 @@ def scrape_etf_yahoo(etf_code, name_to_symbol_map):
              return []
              
         text = parent.get_text(separator=' | ').strip()
+        
+        # 提取資料日期 (例如: 資料時間： | 2026/02/01)
+        date_match = re.search(r'資料時間：\s*\|\s*(\d{4}/\d{2}/\d{2})', text)
+        data_date = date_match.group(1) if date_match else "即時"
+        print(f"-> {etf_code} 資料日期為: {data_date}")
+        
         matches = re.finditer(r'([\u4e00-\u9fa5A-Za-z0-9]+)\s*\|\s*(\d+\.\d+)%', text)
         
         data_rows = []
         for m in matches:
              name = m.group(1).strip()
              weight = float(m.group(2))
-             # 在公司字典中搜尋代碼 (如 "台積電" -> "2330")
              symbol = name_to_symbol_map.get(name)
              if symbol:
                   data_rows.append({
                       "etf_symbol": etf_code,
                       "stock_symbol": symbol,
-                      "weight": weight
-                      # 無須傳入 "shares" 欄位，Upsert會自動保留資料庫原有張數數字
+                      "weight": weight,
+                      "data_date": data_date # 寫入日期
                   })
              else:
                   print(f"跳過 {name} (%): 比對不到公司代號。")

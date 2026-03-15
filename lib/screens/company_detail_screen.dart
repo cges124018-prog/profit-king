@@ -151,19 +151,6 @@ class CompanyDetailScreen extends StatelessWidget {
                
             const SizedBox(height: 24),
             
-            // ETF Holdings Section
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12),
-              child: Text(
-                '持有本股的前十大 ETF',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            
             FutureBuilder<List<Map<String, dynamic>>>(
               future: SupabaseService().fetchEtfHoldings(company.symbol),
               builder: (context, snapshot) {
@@ -171,17 +158,38 @@ class CompanyDetailScreen extends StatelessWidget {
                   return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
                 }
                 if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E2233),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text('暫無 ETF 持股數據', style: TextStyle(color: Colors.white70)),
+                  return Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              '持有本股的前十大 ETF',
+                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '資料日期: 暫無',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E2233),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text('暫無 ETF 持股數據', style: TextStyle(color: Colors.white70)),
+                        ),
+                     ],
                   );
                 }
 
                 final items = snapshot.data!;
+                final String dataDate = items.isNotEmpty ? (items[0]['data_date']?.toString() ?? '即時') : '即時';
                 final etfNames = {
                   '0050': '元大台灣50',
                   '0056': '元大高股息',
@@ -193,42 +201,67 @@ class CompanyDetailScreen extends StatelessWidget {
                   '00905': 'FT臺灣Smart',
                   '0052': '富邦科技',
                   '00692': '富邦公司治理',
-                  '00850': '元大臺灣ESG永續',
-                  '00922': '國泰台灣領袖50',
-                  '00923': '群益台灣ESG低碳',
+                  '00713': '元大台灣高息低波',
+                  '00915': '凱基優選高股息30',
+                  '00918': '大華優利高股息30',
                 };
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E2233),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => Divider(color: Colors.white12, height: 1),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final symbol = item['etf_symbol']?.toString() ?? '';
-                      final shares = item['shares'] != null ? NumberFormat("#,##0").format(item['shares']) : '0';
-                      final weight = item['weight'] != null ? '${(item['weight'] as num).toStringAsFixed(1)}%' : '-%';
-                      final name = etfNames[symbol] ?? '外流通 ETF';
-
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                        subtitle: Text(symbol, style: const TextStyle(color: Colors.white54, fontSize: 13)),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text('$shares 張', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 15)),
-                            const SizedBox(height: 4),
-                            Text('權重 $weight', style: const TextStyle(color: Colors.white38, fontSize: 12)),
-                          ],
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          '持有本股的前十大 ETF',
+                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                      );
+                        Text(
+                          '資料日期: $dataDate',
+                          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final item = items[index];
+                        final etfSymbol = item['etf_symbol']?.toString() ?? '';
+                        final rawShares = (item['shares'] as num?)?.toDouble() ?? 0.0;
+                        final sharesCount = (rawShares / 1000).round(); // 轉換為「張」
+                        final rawWeight = (item['weight'] as num?)?.toDouble() ?? 0.0;
+                        final etfName = etfNames[etfSymbol] ?? '外流通 ETF';
+                        
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A1D2D),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(etfName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            subtitle: Text(etfSymbol, style: TextStyle(color: Colors.grey[400])),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${NumberFormat('#,###').format(sharesCount)} 張',
+                                  style: const TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                Text(
+                                  '權重 ${rawWeight.toStringAsFixed(1)}%',
+                                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
                     },
                   ),
                 );

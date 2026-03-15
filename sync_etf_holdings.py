@@ -27,37 +27,52 @@ def scrape_etf(p, etf_code):
         rows = page.query_selector_all("table tbody tr")
         data_rows = []
         
-        for row in rows:
+        print(f"--- 偵錯 {etf_code} 前 5 筆表格數據欄位 ---")
+        for r_idx, row in enumerate(rows):
             cells = row.query_selector_all("td")
-            if len(cells) < 4:
+            texts = [c.inner_text().strip() for c in cells]
+            
+            # 先打印出來供稍後修正判讀
+            if r_idx < 5:
+                print(f"Row {r_idx}: {texts}")
+                
+            if len(texts) < 3:
                 continue
             
-            # 依據 Wantgoo 表格結構解析
-            # 欄位大約為: 股票名稱(代碼), 權重, 張數/持股, 等等
-            name_and_symbol = cells[0].inner_text().strip()
-            weight_text = cells[1].inner_text().strip().replace('%', '') # 權重百分比
-            shares_text = cells[2].inner_text().strip().replace(',', '') # 主要張數
-            
-            # 拆分名稱與代號，通常格式為 "台積電(2330)"
+            # 更寬鬆且靈活的解析比對
+            # [偵測 1] 代號在第一個欄位, 如: '2330', '台積電', '52.4%', '2511'
+            # 或者是 '台積電(2330)' 放在第一個欄位
+            name_and_symbol = texts[0]
+            weight_text = ""
+            shares_text = ""
+            symbol = ""
+
+            for t in texts:
+                if('%' in t or '.' in t) and len(t) < 6 and not weight_text:
+                    weight_text = t.replace('%', '')
+                elif t.replace(',', '').isdigit() and len(t) > 2 and not shares_text:
+                    shares_text = t.replace(',', '')
+
             if '(' in name_and_symbol and ')' in name_and_symbol:
-                symbol = name_and_symbol.split('(')[1].replace(')', '').strip()
-            else:
-                continue # 如果沒抓到代號則跳過
+                 symbol = name_and_symbol.split('(')[1].replace(')', '').strip()
+            elif len(texts) > 1 and texts[1].isdigit() and len(texts[1]) == 4:
+                 symbol = texts[1] # 有些表格第二欄放代號
+            
+            if not symbol or not weight_text or not shares_text:
+                continue # 解析失敗跳過
                 
             try:
-                weight = float(weight_text)
-                shares = int(float(shares_text)) # 可能有小數點，轉 float 再轉 int
+                data_rows.append({
+                    "etf_symbol": etf_code,
+                    "stock_symbol": symbol,
+                    "shares": int(float(shares_text)),
+                    "weight": float(weight_text)
+                })
             except:
                 continue
-                
-            data_rows.append({
-                "etf_symbol": etf_code,
-                "stock_symbol": symbol,
-                "shares": shares,
-                "weight": weight
-            })
             
         browser.close()
+        print(f"-> {etf_code} 成功解析到 {len(data_rows)} 筆。")
         return data_rows
     except Exception as e:
         print(f"抓取 {etf_code} 異常: {e}")

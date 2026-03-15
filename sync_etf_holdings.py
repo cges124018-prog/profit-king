@@ -1,7 +1,8 @@
 import os
-import json
-from playwright.sync_api import sync_playwright
-# pip install playwright supabase
+import urllib.request
+import re
+from bs4 import BeautifulSoup
+# pip install supabase
 from supabase import create_client, Client
 
 # 從環境變數中取得 Supabase 連線資訊 (GitHub Secrets自動帶入)
@@ -9,74 +10,71 @@ url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 supabase: Client = create_client(url, key)
 
+# 免持股張數爬蟲，只抓取 % 權重，由 Yahoo! 股市讀取公用數據
 etf_list = ['0050', '0056', '00878', '00919', '00929', '006208', '00713', '00881', '00915', '00918']
 
-def scrape_etf(p, etf_code):
-    print(f"--- 開始抓取 {etf_code} 成分股 ---")
-    browser = p.chromium.launch(headless=True)
-    page = browser.new_page()
-    
-    # 這裡我們使用 玩股網 或 嗨投資 做為資料源
-    # 台灣主要 ETF 資料在 嗨投資 或 玩股網 都有完整張數與權重
+def fetch_name_to_symbol_map():
+    """從 supabase.tables('companies_api') 下載全台灣所有個股的 {名字: 代號} 對照"""
+    mapping = {}
     try:
-        url = f"https://www.wantgoo.com/etf/{etf_code}/constituent"
-        page.goto(url, timeout=60000)
-        page.wait_for_selector("table", timeout=10000)
+        res = supabase.table("companies_api").select("name, symbol").execute()
+        for item in res.data:
+            # 去除可能包含的空格，例如 "台積電 " 變為 "台積電"
+            mapping[item['name'].strip()] = item['symbol'].strip()
+    except Exception as e:
+         print(f"下載 companies_api 故障: {e}")
+    return mapping
+
+def scrape_etf_yahoo(etf_code, name_to_symbol_map):
+    print(f"--- 開始抓取 {etf_code} 權重 % ---")
+    url = f"https://tw.stock.yahoo.com/quote/{etf_code}.TW/holding"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+    }
+    
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req) as r:
+            html = r.read().decode('utf-8')
+            
+        soup = BeautifulSoup(html, "html.parser")
+        title_tag = soup.find(string="前十大持股")
+        if not title_tag:
+             print(f"未找到 {etf_code} 前十大持股列表標題。")
+             return []
+             
+        # 往上退 5 層，抓取包裹整個列表的大範圍 text
+        parent = title_tag.parent
+        for _ in range(5):
+             if parent: parent = parent.parent
+             
+        if not parent:
+             print(f"{etf_code} 無法抓取到父節點包裹區塊。")
+             return []
+             
+        text = parent.get_text(separator=' | ').strip()
+        matches = re.finditer(r'([\u4e00-\u9fa5A-Za-z0-9]+)\s*\|\s*(\d+\.\d+)%', text)
         
-        # 讀取表格行
-        rows = page.query_selector_all("table tbody tr")
         data_rows = []
-        
-        print(f"--- 偵錯 {etf_code} 前 5 筆表格數據欄位 ---")
-        for r_idx, row in enumerate(rows):
-            cells = row.query_selector_all("td")
-            texts = [c.inner_text().strip() for c in cells]
-            
-            # 先打印出來供稍後修正判讀
-            if r_idx < 5:
-                print(f"Row {r_idx}: {texts}")
-                
-            if len(texts) < 3:
-                continue
-            
-            # 更寬鬆且靈活的解析比對
-            # [偵測 1] 代號在第一個欄位, 如: '2330', '台積電', '52.4%', '2511'
-            # 或者是 '台積電(2330)' 放在第一個欄位
-            name_and_symbol = texts[0]
-            weight_text = ""
-            shares_text = ""
-            symbol = ""
-
-            for t in texts:
-                if('%' in t or '.' in t) and len(t) < 6 and not weight_text:
-                    weight_text = t.replace('%', '')
-                elif t.replace(',', '').isdigit() and len(t) > 2 and not shares_text:
-                    shares_text = t.replace(',', '')
-
-            if '(' in name_and_symbol and ')' in name_and_symbol:
-                 symbol = name_and_symbol.split('(')[1].replace(')', '').strip()
-            elif len(texts) > 1 and texts[1].isdigit() and len(texts[1]) == 4:
-                 symbol = texts[1] # 有些表格第二欄放代號
-            
-            if not symbol or not weight_text or not shares_text:
-                continue # 解析失敗跳過
-                
-            try:
-                data_rows.append({
-                    "etf_symbol": etf_code,
-                    "stock_symbol": symbol,
-                    "shares": int(float(shares_text)),
-                    "weight": float(weight_text)
-                })
-            except:
-                continue
-            
-        browser.close()
-        print(f"-> {etf_code} 成功解析到 {len(data_rows)} 筆。")
+        for m in matches:
+             name = m.group(1).strip()
+             weight = float(m.group(2))
+             # 在公司字典中搜尋代碼 (如 "台積電" -> "2330")
+             symbol = name_to_symbol_map.get(name)
+             if symbol:
+                  data_rows.append({
+                      "etf_symbol": etf_code,
+                      "stock_symbol": symbol,
+                      "weight": weight
+                      # 無須傳入 "shares" 欄位，Upsert會自動保留資料庫原有張數數字
+                  })
+             else:
+                  print(f"跳過 {name} (%): 比對不到公司代號。")
+                  
+        print(f"-> {etf_code} 成功讀取到 {len(data_rows)} 筆權重數據。")
         return data_rows
     except Exception as e:
-        print(f"抓取 {etf_code} 異常: {e}")
-        browser.close()
+        print(f"讀取 {etf_code} 異常: {e}")
         return []
 
 def main():
@@ -84,25 +82,28 @@ def main():
         print("缺少 Supabase 憑證設定")
         return
 
+    # 先取得個股名字與代號對照表 (省去重複查詢 API 的次數)
+    name_to_symbol_map = fetch_name_to_symbol_map()
+    print(f"成功加載 {len(name_to_symbol_map)} 筆各股代號對照字典。")
+
     all_data = []
-    with sync_playwright() as p:
-        for etf in etf_list:
-            items = scrape_etf(p, etf)
-            all_data.extend(items)
+    for etf in etf_list:
+        items = scrape_etf_yahoo(etf, name_to_symbol_map)
+        all_data.extend(items)
             
     if all_data:
-        print(f"準備寫入 {len(all_data)} 筆資料至 Supabase...")
+        print(f"準備寫入 {len(all_data)} 筆權重 % 到 Supabase...")
         try:
-            # 使用 Upsert (如果有衝突就覆蓋 stock_symbol, etf_symbol 組合)
-            # 在寫入大數據前，可先執行：supabase.table("etf_holdings").delete().execute() 清除舊資料，保持最新
-            supabase.table("etf_holdings").delete().neq('etf_symbol', 'INVALID_SYMBOL_NEVER_MATCH').execute() 
-            
-            res = supabase.table("etf_holdings").insert(all_data).execute()
-            print("資料自動同步完成！")
+            # 使用 Upsert (如果有重複 composite key 就覆寫 weight，並保留原有 shares)
+            res = supabase.table("etf_holdings").upsert(
+                all_data, 
+                on_conflict="etf_symbol, stock_symbol"
+            ).execute()
+            print("資料自動權重覆寫同步完成！")
         except Exception as e:
-             print(f"寫入 Supabase 失敗: {e}")
+             print(f"覆寫 Supabase 失敗: {e}")
     else:
-        print("本次未抓取到任何資料。")
+        print("本次未更新到任何比重。")
 
 if __name__ == "__main__":
     main()

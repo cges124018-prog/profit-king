@@ -1,0 +1,32 @@
+name: ETF Holdings Sync
+
+on:
+  schedule:
+    # 💡 每天台灣時間凌晨 01:00 (UTC 17:00) 自動執行一次
+    - cron: '0 17 * * *'
+  workflow_dispatch: # 支援在 GitHub 網站上手動點擊執行測試
+
+jobs:
+  sync_data:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. 將存儲庫的程式碼下載到 GitHub 雲端虛擬機
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    # 2. 設置 Python 環境
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 3. 安裝必要套件
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 supabase
+
+    # 4. 執行爬蟲同步腳本 (直接連入 Supabase 匯入資料)
+    - name: Run Python Sync Script
+      run: python scripts/sync_etf_holdings.py

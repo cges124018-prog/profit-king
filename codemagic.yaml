@@ -12,11 +12,6 @@ workflows:
       events:
         - push
     scripts:
-      - name: Automatic code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "com.seth.profitking.profitKing" --type IOS_APP_STORE --create
-          keychain add-certificates
       - name: Get packages
         script: |
           flutter packages pub get

@@ -12,6 +12,12 @@ workflows:
       events:
         - push
     scripts:
+      - name: Manual Code signing
+        script: |
+          keychain initialize
+          keychain add-certificates --certificate ios_distribution.p12 --certificate-password "1234"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp ios_distribution.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
       - name: Get packages
         script: |
           flutter packages pub get

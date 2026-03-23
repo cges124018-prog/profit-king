@@ -23,7 +23,27 @@ workflows:
           flutter packages pub get
       - name: Flutter build ipa
         script: |
-          flutter build ipa --release --build-name=1.0.0 --build-number=1
+          PROV_NAME=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/ios_distribution.mobileprovision | grep -A1 "<key>Name</key>" | grep "<string>" | sed -e 's/.*<string>//' -e 's/<\/string>.*//')
+          echo "Found Provisioning profile name: $PROV_NAME"
+          cat <<EOF > ExportOptions.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store</string>
+            <key>teamID</key>
+            <string>A9L2KQ9GGA</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.seth.profitking.profitKing</key>
+              <string>$PROV_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+          flutter build ipa --release --build-name=1.0.0 --build-number=1 --export-options-plist=ExportOptions.plist
+
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:

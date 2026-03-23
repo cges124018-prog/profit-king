@@ -1,0 +1,27 @@
+# Codemagic configuration for Flutter iOS app
+workflows:
+  ios-release:
+    name: iOS Release Build
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - app_store_connect # 稍後需在 Codemagic 後台 Environment variables 綁定
+      flutter: stable
+    triggering:
+      events:
+        - push
+      branch_filters:
+        - name: main
+    scripts:
+      - name: Get packages
+        script: |
+          flutter packages pub get
+      - name: Flutter build ipa
+        script: |
+          flutter build ipa --release --build-name=1.0.0 --build-number=1
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration

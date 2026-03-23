@@ -19,7 +19,7 @@ class SupabaseService {
         final resApi = await query;
         combined.addAll(resApi as List);
       } catch (e) {
-        print('companies_api error: $e');
+        // print('companies_api error: $e');
       }
       
       try {
@@ -38,7 +38,7 @@ class SupabaseService {
           }
         }
       } catch (e) {
-        print('companies_manual error: $e');
+        // print('companies_manual error: $e');
       }
 
       // Sort by net_income descending
@@ -53,10 +53,11 @@ class SupabaseService {
         combined[i]['rank'] = i + 1;
       }
 
-      // Take top 10
-      final top10 = combined.take(10).toList();
+      // Take top 5 for specific industries, else top 10
+      final count = (industry != null && ['航運業', '電子零組件業', '其他電子業'].contains(industry)) ? 5 : 10;
+      final topList = combined.take(count).toList();
 
-      return top10.map((data) {
+      return topList.map((data) {
         // Map the JSON from Supabase to our CompanyData model
         return CompanyData(
           rank: data['rank'] ?? 0,
@@ -79,7 +80,7 @@ class SupabaseService {
         );
       }).toList();
     } catch (e) {
-      print('Error fetching companies from Supabase: $e');
+      // print('Error fetching companies from Supabase: $e');
       rethrow;
     }
   }
@@ -109,23 +110,121 @@ class SupabaseService {
       final sortedYears = years.toList()..sort((a, b) => b.compareTo(a));
       return sortedYears;
     } catch (e) {
-      print('Error fetching years: $e');
+      // print('Error fetching years: $e');
       return ['2026 年', '2025 年']; // Fallback
     }
   }
   
   Future<List<Map<String, dynamic>>> fetchEtfHoldings(String stockSymbol) async {
     try {
+      // 1. 先抓取雲端 etfs 名稱對照表
+      final etfsRes = await supabase.from('etfs').select('symbol, name');
+      final Map<String, String> etfNameMap = {};
+      for (var row in (etfsRes as List)) {
+        if (row['symbol'] != null) {
+          final String sym = row['symbol'].toString().trim().toUpperCase();
+          etfNameMap[sym] = row['name']?.toString() ?? '外流通 ETF';
+        }
+      }
+
+      // 2. 抓取持股明細
       final response = await supabase
           .from('etf_holdings')
-          .select('etf_symbol, shares, weight')
+          .select('etf_symbol, shares, weight, data_date')
           .eq('stock_symbol', stockSymbol)
           .order('shares', ascending: false)
-          .limit(10);
-      return (response as List).map((item) => item as Map<String, dynamic>).toList();
+          .limit(30); // 🟢 放寬撈取額度，不怕重複佔位
+          
+      // 3. 在本地段主動合併與組裝對應格式 (並扣上防重複鎖)
+      final Map<String, Map<String, dynamic>> dedupMap = {};
+      
+      for (var item in (response as List)) {
+          final Map<String, dynamic> mutableItem = Map<String, dynamic>.from(item as Map);
+          final String etfSymbol = (mutableItem['etf_symbol']?.toString() ?? '').trim().toUpperCase();
+          
+          mutableItem['etfs'] = {
+             'name': etfNameMap[etfSymbol] ?? etfSymbol
+          };
+          
+          if (!dedupMap.containsKey(etfSymbol)) {
+              dedupMap[etfSymbol] = mutableItem;
+          }
+      }
+
+       return dedupMap.values.take(10).toList(); // 🟢 放大過濾額度為前 10 筆明細
     } catch (e) {
-      print('Error fetching ETF holdings: $e');
-      return [];
+      // 🚨 Debug 偵錯小幫手：將錯誤訊息直接傳回前端，排查為何變成空白！
+      return [{
+         'etf_symbol': 'DEBUG',
+         'shares': 1000, 
+         'weight': 0.0,
+         'data_date': 'ERR',
+         'etfs': { 'name': '載入發生故障: ${e.toString()}' }
+      }];
+    }
+  }
+
+  // 🟢 抓取特定 ETF 的成分股產業分佈，用於繪製產業佔比進度條
+  Future<Map<String, double>> fetchEtfIndustryDistribution(String etfSymbol) async {
+    try {
+      // 1. 抓取成分股 (全量抓取)
+      final etfRes = await supabase
+          .from('etf_holdings')
+          .select('stock_symbol, weight')
+          .eq('etf_symbol', etfSymbol);
+      
+      final etfItems = etfRes as List;
+      if (etfItems.isEmpty) return {};
+
+      // 提取所有股號
+      final List<String> symbols = etfItems
+          .map((e) => e['stock_symbol']?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+
+      // 2. 批量查這些股號的產業 (從 api 表)
+      final compRes = await supabase
+          .from('companies_api')
+          .select('symbol, industry')
+          .inFilter('symbol', symbols);
+          
+      final compManualRes = await supabase
+          .from('companies_manual')
+          .select('symbol, industry')
+          .inFilter('symbol', symbols);
+
+      final Map<String, String> industryMap = {};
+      
+      for (var row in (compRes as List)) {
+         final sym = row['symbol']?.toString() ?? '';
+         final ind = row['industry']?.toString() ?? '其他';
+         if (sym.isNotEmpty) industryMap[sym] = ind;
+      }
+      
+      for (var row in (compManualRes as List)) {
+         final sym = row['symbol']?.toString() ?? '';
+         final ind = row['industry']?.toString() ?? '其他';
+         if (sym.isNotEmpty) industryMap[sym] = ind;
+      }
+
+      // 3. 彙總計算
+      final Map<String, double> distribution = {};
+      double totalSum = 0.0;
+      for (var item in etfItems) {
+         final symbol = item['stock_symbol']?.toString() ?? '';
+         final weight = (item['weight'] as num?)?.toDouble() ?? 0.0;
+         final industry = industryMap[symbol] ?? '其他股'; 
+         
+         distribution[industry] = (distribution[industry] ?? 0.0) + weight;
+         totalSum += weight;
+      }
+      
+      // 平滑總計如果為 0 的除法保護
+      if (totalSum == 0) totalSum = 100.0;
+
+      return distribution;
+    } catch (e) {
+      return {};
     }
   }
 }

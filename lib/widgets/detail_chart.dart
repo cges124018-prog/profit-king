@@ -158,6 +158,45 @@ class DetailChartWidget extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          // 🟢 底部裝飾性成交量長條圖 (模擬 40 個點)
+          const Padding(
+            padding: EdgeInsets.only(left: 4, bottom: 8),
+            child: Text(
+              '成交量 (裝飾數據)',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ),
+          SizedBox(
+            height: 30,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(42, (idx) {
+                // 模擬長短不一：透過固定數值生成或 idx 組合生成
+                final heights = [
+                  12.0, 8.0, 15.0, 22.0, 10.0, 5.0, 18.0, 25.0, 7.0, 14.0,
+                  20.0, 11.0, 19.0, 6.0, 24.0, 16.0, 9.0, 13.0, 21.0, 11.0,
+                  17.0, 5.0, 23.0, 10.0, 18.0, 14.0, 8.0, 25.0, 12.0, 6.0,
+                  20.0, 15.0, 9.0, 23.0, 11.0, 17.0, 7.0, 13.0, 21.0, 10.0,
+                  19.0, 14.0
+                ];
+                // 模擬紅綠交錯
+                final isGreen = idx % 2 == 0 || idx % 3 == 0; 
+                final color = isGreen ? const Color(0xFF34C759) : const Color(0xFFFF3B30);
+
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                    height: heights[idx % heights.length],
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
         ],
       ),
     );

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/company.dart';
-import 'sparkline.dart';
+
 
 
 class CompanyCard extends StatelessWidget {
@@ -17,8 +17,9 @@ class CompanyCard extends StatelessWidget {
       final billion = ((amount % 1000000000000) / 100000000).floor();
       return "\$ $trillion兆$billion億元";
     } else if (amount >= 100000000) {
-      // 億元處理：保留小數不進位
-      final formatted = NumberFormat("#,##0.00").format(amount / 100000000);
+      // 億元處理：保留小數不進位 (無條件捨去，避免進位小數自動進位)
+      final value = (amount / 100000000 * 100).floorToDouble() / 100.0;
+      final formatted = NumberFormat("#,##0.00").format(value);
       return "\$ $formatted 億";
     }
     return "\$ ${NumberFormat("#,##0").format(amount)}";
@@ -68,7 +69,7 @@ class CompanyCard extends StatelessWidget {
               const SizedBox(width: 12),
               // Name & Symbol
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -89,17 +90,6 @@ class CompanyCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-              ),
-              // Sparkline
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.center,
-                  child: SparklineWidget(
-                    data: company.recentQuartersNetIncome,
-                    color: yoyColor,
-                  ),
                 ),
               ),
               // Net Income & YoY
@@ -127,22 +117,24 @@ class CompanyCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: yoyColor.withValues(alpha: 0.25), // Increased opacity for better container definition
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$growthSign${(company.yoyGrowth * 100).toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold, // Bolder font for better contrast
-                          color: yoyColor,
+                    if (company.yoyGrowth != 0.0) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: yoyColor.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$growthSign${(company.yoyGrowth * 100).toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: yoyColor,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

@@ -42,7 +42,7 @@ workflows:
           </dict>
           </plist>
           EOF
-          flutter build ipa --release --build-name=1.0.0 --build-number=1 --export-options-plist=ExportOptions.plist
+          flutter build ipa --release --build-name=1.0.0 --build-number=$BUILD_NUMBER --export-options-plist=ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
